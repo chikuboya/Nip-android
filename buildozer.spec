@@ -41,9 +41,13 @@ fullscreen = 1
 android.api = 31
 android.minapi = 21
 
+# (bool) Android SDKのライセンスを自動で承諾するか
+android.accept_sdk_license = True
+
 # (list) サポートするアーキテクチャ（1つに絞ります）
 android.archs = arm64-v8a
 
 # (bool) 署名済みのAPK/AABを生成するかどうか (デバッグ時は0でOK)
 android.debug_artifact = 0
+
 
