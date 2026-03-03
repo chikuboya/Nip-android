@@ -33,7 +33,12 @@ STRATEGIC_NODES = [(0,3), (7,3), (3,0), (3,7), (0,2), (7,2), (0,5), (7,5)]
 class MenuScreen(Screen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+        # 外枠のレイアウト
         layout = BoxLayout(orientation='vertical', padding=50, spacing=25)
+        
+        # --- 上部のスペーサー (中央寄せのため) ---
+        layout.add_widget(Label(size_hint_y=0.2)) 
+        
         layout.add_widget(Label(text="NIP 戦略モード", font_size='35sp', bold=True, size_hint_y=None, height=120))
         
         pvp_btn = Button(text="人 対 人 (PvP)", size_hint=(0.8, None), height=100, pos_hint={'center_x': 0.5}, bold=True, font_size='22sp')
@@ -61,6 +66,10 @@ class MenuScreen(Screen):
         pve_btn = Button(text="対局開始", size_hint=(0.9, None), height=120, pos_hint={'center_x': 0.5}, background_color=(0.67, 0.84, 0.9, 1), bold=True, font_size='26sp')
         pve_btn.bind(on_release=lambda x: self.start_game("PvE"))
         layout.add_widget(pve_btn)
+
+        # --- 下部のスペーサー (中央寄せのため) ---
+        layout.add_widget(Label(size_hint_y=0.3)) 
+        
         self.add_widget(layout)
 
     def start_game(self, mode):
@@ -91,11 +100,9 @@ class GameScreen(Screen):
             Color(143/255, 188/255, 143/255, 1) 
             self.bg_rect = Rectangle(pos=(0, 0), size=Window.size)
 
-        # ステータス（大きく太字に）
         self.status_label = Label(text="", pos_hint={'center_x': 0.5, 'top': 0.98}, size_hint=(1, 0.1), color=(0,0,0,1), font_size='22sp', bold=True)
         self.main_layout.add_widget(self.status_label)
 
-        # 勝利宣言（石に被らない位置）
         self.result_label = Label(text="", pos_hint={'center_x': 0.5, 'top': 0.91}, size_hint=(1, 0.1), font_size='45sp', bold=True, color=(1, 0, 0, 0))
         self.main_layout.add_widget(self.result_label)
 
@@ -199,13 +206,9 @@ class GameScreen(Screen):
         return list(set(normal_flipped + circle_flipped))
 
     def on_touch_down(self, touch):
-        # 画面下のボタンエリアをクリックした場合は、石を置く処理を走らせない（ボタンを優先する）
         if touch.y < Window.height * 0.15:
             return super().on_touch_down(touch)
-        
-        # 終局時は盤面クリックのみ無効にする
         if self.is_game_over: return 
-        
         if self.mode == "PvE" and self.turn == self.cpu_color: return
         off_x, off_y, c_size, margin, cell_size = self.get_draw_params()
         best, min_dist = None, cell_size * 0.5
