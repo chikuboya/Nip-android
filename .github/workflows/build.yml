@@ -29,13 +29,14 @@ jobs:
             curl unzip \
             libffi-dev libssl-dev \
             ant autoconf automake libtool pkg-config
-          # ビルドに必要なツールをインストール
-          pip install --user --upgrade "Cython<3.0" buildozer python-for-android
 
       - name: Build with Buildozer
         run: |
-          # ツールを確実に最新化
-          pip install --user --upgrade buildozer Cython==0.29.33 python-for-android
+          # 1. 既存の古いBuildozerを完全に削除してクリーンにする
+          pip uninstall -y buildozer python-for-android
+          
+          # 2. 最新版をインストール
+          pip install --user buildozer Cython==0.29.33 python-for-android
           
           # パスの設定
           export PATH=$PATH:~/.local/bin
@@ -43,11 +44,12 @@ jobs:
           # ファイル名の修正（もしあれば）
           if [ -f buildozer.spec.txt ]; then mv buildozer.spec.txt buildozer.spec; fi
           
-          # Java 17を指定（JAVA_HOME_17_X64 変数はGitHub Actions標準）
+          # Java 17を指定
           export JAVA_HOME=$JAVA_HOME_17_X64
           
-          # ビルド実行
-          yes | buildozer -v android debug
+          # 3. ビルド実行
+          # --profile を指定せず、直接実行して衝突を避ける
+          buildozer -v android debug
         env:
           ACCEPT_SDK_LICENSE: "yes"
         
