@@ -5,7 +5,7 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
@@ -14,23 +14,15 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Install dependencies
+      - name: Install Buildozer
         run: |
-          sudo apt-get update
-          # エラーの原因である libunwind-dev を最初に追加し、
-          # かつ壊れた依存関係を強制的に修復する設定 (-f) を入れています
-          sudo apt-get install -f -y \
-            libunwind-dev \
-            build-essential git python3-dev ffmpeg \
-            libsdl2-dev libsdl2-image-dev libsdl2-mixer-dev libsdl2-ttf-dev \
-            libportmidi-dev libswscale-dev libavformat-dev libavcodec-dev \
-            zlib1g-dev libgstreamer1.0-dev autoconf automake libtool pkg-config
-          
+          # 最小限のツールだけをインストールします
           pip install --user --upgrade Cython==0.29.33 buildozer setuptools
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
 
       - name: Build with Buildozer
         run: |
-          export PATH=$PATH:$HOME/.local/bin
+          # 複雑な事前設定なしで、Buildozer自身に依存関係を解決させます
           yes | buildozer android debug
         env:
           APP_ANDROID_ACCEPT_SDK_LICENSE: "1"
