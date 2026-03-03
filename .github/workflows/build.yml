@@ -21,13 +21,17 @@ jobs:
             build-essential git python3-dev ffmpeg \
             libsdl2-dev libsdl2-image-dev libsdl2-mixer-dev libsdl2-ttf-dev \
             libportmidi-dev libswscale-dev libavformat-dev libavcodec-dev \
-            zlib1g-dev libgstreamer1.0-dev
-          pip install --user --upgrade Cython==0.29.33 buildozer
+            zlib1g-dev libgstreamer1.0-dev autoconf automake libtool pkg-config
+          
+          # Cythonのバージョンを固定せず、最新のビルド環境を整えます
+          pip install --user --upgrade pip
+          pip install --user --upgrade Cython buildozer setuptools
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
 
       - name: Build with Buildozer
         run: |
-          # 直下に spec がある前提で実行
-          yes | buildozer android debug
+          # ログを詳細(log_level=2)にして、エラーの原因を特定しやすくします
+          yes | buildozer -v android debug
         env:
           APP_ANDROID_ACCEPT_SDK_LICENSE: "1"
 
