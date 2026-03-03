@@ -10,7 +10,8 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Build with Buildozer
-        uses: ArtemSashko/buildozer-action@v1
+        # 全て小文字の artemsashko に修正しました
+        uses: artemsashko/buildozer-action@v1
         with:
           buildozer_version: stable
           python_version: 3.11
