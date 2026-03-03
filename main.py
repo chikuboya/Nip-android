@@ -12,6 +12,7 @@ from kivy.uix.screenmanager import ScreenManager, Screen
 import os
 import math
 import random
+import time
 
 # 日本語フォント登録
 font_path = os.path.join(os.path.dirname(__file__), 'font.ttc')
@@ -33,12 +34,8 @@ STRATEGIC_NODES = [(0,3), (7,3), (3,0), (3,7), (0,2), (7,2), (0,5), (7,5)]
 class MenuScreen(Screen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        # 外枠のレイアウト
         layout = BoxLayout(orientation='vertical', padding=50, spacing=25)
-        
-        # --- 上部のスペーサー (中央寄せのため) ---
         layout.add_widget(Label(size_hint_y=0.2)) 
-        
         layout.add_widget(Label(text="NIP 戦略モード", font_size='35sp', bold=True, size_hint_y=None, height=120))
         
         pvp_btn = Button(text="人 対 人 (PvP)", size_hint=(0.8, None), height=100, pos_hint={'center_x': 0.5}, bold=True, font_size='22sp')
@@ -66,10 +63,7 @@ class MenuScreen(Screen):
         pve_btn = Button(text="対局開始", size_hint=(0.9, None), height=120, pos_hint={'center_x': 0.5}, background_color=(0.67, 0.84, 0.9, 1), bold=True, font_size='26sp')
         pve_btn.bind(on_release=lambda x: self.start_game("PvE"))
         layout.add_widget(pve_btn)
-
-        # --- 下部のスペーサー (中央寄せのため) ---
         layout.add_widget(Label(size_hint_y=0.3)) 
-        
         self.add_widget(layout)
 
     def start_game(self, mode):
@@ -102,7 +96,6 @@ class GameScreen(Screen):
 
         self.status_label = Label(text="", pos_hint={'center_x': 0.5, 'top': 0.98}, size_hint=(1, 0.1), color=(0,0,0,1), font_size='22sp', bold=True)
         self.main_layout.add_widget(self.status_label)
-
         self.result_label = Label(text="", pos_hint={'center_x': 0.5, 'top': 0.91}, size_hint=(1, 0.1), font_size='45sp', bold=True, color=(1, 0, 0, 0))
         self.main_layout.add_widget(self.result_label)
 
@@ -205,9 +198,118 @@ class GameScreen(Screen):
                     else: break
         return list(set(normal_flipped + circle_flipped))
 
+    # --- 強化版 CPU思考ロジック ---
+
+    def evaluate_board(self, board, color):
+        opp = 'white' if color == 'black' else 'black'
+        score = 0
+        filled = sum(1 for v in board.values() if v is not None)
+        is_endgame = filled > 42
+        
+        for coord, st in board.items():
+            if st is None: continue
+            val = 1.0
+            if coord in STRATEGIC_NODES: val += 25.0 if not is_endgame else 5.0
+            elif coord in CIRCUMFERENCE: val += 10.0 if not is_endgame else 3.0
+            
+            if not is_endgame:
+                liberties = 0
+                for dx, dy in [(1,0),(-1,0),(0,1),(0,-1),(1,1),(1,-1),(-1,1),(-1,-1)]:
+                    neighbor = (coord[0]+dx, coord[1]+dy)
+                    if neighbor in VALID_COORDS and board[neighbor] is None: liberties += 1
+                val -= liberties * 1.5
+            
+            if is_endgame: val += 5.0
+            if st == color: score += val
+            else: score -= val
+        return score
+
+    def minimax(self, board, depth, alpha, beta, is_maximizing, color):
+        if (time.time() - self.start_time > self.time_limit):
+            self.abort_search = True
+            return self.evaluate_board(board, color)
+        if depth == 0 or self.abort_search:
+            return self.evaluate_board(board, color)
+
+        opp = 'white' if color == 'black' else 'black'
+        curr_p = color if is_maximizing else opp
+        moves = []
+        for n in VALID_COORDS:
+            f = self.get_flipped(n, curr_p, board)
+            if f: moves.append((n, f))
+        if not moves: return self.evaluate_board(board, color)
+
+        moves.sort(key=lambda x: len(x[1]) + (30 if x[0] in STRATEGIC_NODES else 0), reverse=True)
+
+        if is_maximizing:
+            v = -99999
+            for m, f in moves:
+                nb = board.copy()
+                nb[m] = color
+                for s in f: nb[s] = color
+                res = self.minimax(nb, depth-1, alpha, beta, False, color)
+                v = max(v, res)
+                alpha = max(alpha, v)
+                if beta <= alpha or self.abort_search: break
+            return v
+        else:
+            v = 99999
+            for m, f in moves:
+                nb = board.copy()
+                nb[m] = opp
+                for s in f: nb[s] = opp
+                res = self.minimax(nb, depth-1, alpha, beta, True, color)
+                v = min(v, res)
+                beta = min(beta, v)
+                if beta <= alpha or self.abort_search: break
+            return v
+
+    def cpu_move(self):
+        if self.is_game_over: return
+        moves = []
+        for n in VALID_COORDS:
+            f = self.get_flipped(n, self.turn, self.board)
+            if f: moves.append((n, f))
+        if not moves: return
+
+        lv_cfg = {
+            1: {'d': 0, 'r': 0.7, 't': 0.1}, 2: {'d': 1, 'r': 0.5, 't': 0.2},
+            3: {'d': 1, 'r': 0.3, 't': 0.3}, 4: {'d': 2, 'r': 0.2, 't': 0.4},
+            5: {'d': 2, 'r': 0.1, 't': 0.5}, 6: {'d': 3, 'r': 0.05, 't': 0.7},
+            7: {'d': 4, 'r': 0.0, 't': 0.9}, 8: {'d': 6, 'r': 0.0, 't': 1.1},
+            9: {'d': 8, 'r': 0.0, 't': 1.3}, 10: {'d': 12, 'r': 0.0, 't': 1.5}
+        }
+        cfg = lv_cfg.get(self.level, lv_cfg[5])
+        if random.random() < cfg['r']:
+            self.make_move(random.choice(moves)[0])
+            return
+
+        self.start_time = time.time()
+        self.time_limit = cfg['t']
+        self.abort_search = False
+        best_m = moves[0][0]
+
+        for d in range(1, cfg['d'] + 1):
+            cur_best_v, cur_best_m = -100000, None
+            moves.sort(key=lambda x: len(x[1]) + (30 if x[0] in STRATEGIC_NODES else 0), reverse=True)
+            for m, f in moves:
+                if time.time() - self.start_time > self.time_limit:
+                    self.abort_search = True
+                    break
+                nb = self.board.copy()
+                nb[m] = self.turn
+                for s in f: nb[s] = self.turn
+                val = self.minimax(nb, d-1, -100000, 100000, False, self.turn)
+                if val > cur_best_v:
+                    cur_best_v, cur_best_m = val, m
+            if self.abort_search: break
+            else: best_m = cur_best_m
+        self.make_move(best_m)
+
+    # --- 共通ロジック ---
+
     def on_touch_down(self, touch):
-        if touch.y < Window.height * 0.15:
-            return super().on_touch_down(touch)
+        if touch.y < Window.height * 0.15: return super().on_touch_down(touch)
         if self.is_game_over: return 
         if self.mode == "PvE" and self.turn == self.cpu_color: return
         off_x, off_y, c_size, margin, cell_size = self.get_draw_params()
@@ -249,24 +351,6 @@ class GameScreen(Screen):
         elif self.mode == "PvE" and self.turn == self.cpu_color:
             Clock.schedule_once(lambda dt: self.cpu_move(), 0.8)
 
-    def cpu_move(self):
-        if self.is_game_over: return
-        moves = []
-        for n in VALID_COORDS:
-            f = self.get_flipped(n, self.turn, self.board)
-            if f: moves.append((n, f))
-        if not moves: return
-        scored_moves = []
-        for m, f in moves:
-            score = len(f)
-            if m in STRATEGIC_NODES: score += 15
-            elif m in CIRCUMFERENCE: score += 5
-            scored_moves.append((m, score))
-        scored_moves.sort(key=lambda x: x[1], reverse=True)
-        best_score = scored_moves[0][1]
-        best_candidates = [move for move, score in scored_moves if score == best_score]
-        self.make_move(random.choice(best_candidates))
-
     def reset_game(self):
         self.board = {coord: None for coord in VALID_COORDS}
         self.board[(3,3)], self.board[(4,4)] = 'white', 'white'
@@ -286,7 +370,6 @@ class GameScreen(Screen):
         if self.is_game_over:
             self.is_game_over = False
             self.result_label.color = (1, 0, 0, 0)
-        
         steps = 2 if self.mode == "PvE" and len(self.history) >= 2 else 1
         for _ in range(steps):
             if self.history:
@@ -299,8 +382,7 @@ class GameScreen(Screen):
         b, w = list(self.board.values()).count('black'), list(self.board.values()).count('white')
         t_str = "黒" if self.turn == 'black' else "白"
         status = f"黒: {b}   白: {w} | 次: {t_str}"
-        if self.pass_msg:
-            status = f"{self.pass_msg} {status}"
+        if self.pass_msg: status = f"{self.pass_msg} {status}"
         self.status_label.text = status
 
     def end_game(self):
