@@ -17,18 +17,18 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          # パッケージ名を一般的なものに修正しました
+          # エラーの原因となる特定のパッケージを外し、より汎用的な名前に整理しました
           sudo apt-get install -y \
-            python3-pip build-essential git python3-dev ffmpeg \
+            build-essential git python3-dev ffmpeg \
             libsdl2-dev libsdl2-image-dev libsdl2-mixer-dev libsdl2-ttf-dev \
             libportmidi-dev libswscale-dev libavformat-dev libavcodec-dev \
-            zlib1g-dev libgstreamer1.0-dev gstreamer1.0-plugins-base-dev
+            zlib1g-dev libgstreamer1.0-dev
           
           pip install --user --upgrade Cython==0.29.33 buildozer
 
       - name: Build with Buildozer
         run: |
-          # ログを詳細に出し、自動で規約に同意します
+          # 途中の質問に全てyesで答え、デバッグモードで実行します
           yes | buildozer android debug
         env:
           APP_ANDROID_ACCEPT_SDK_LICENSE: "1"
