@@ -1,24 +1,26 @@
 [app]
-title = Nip Strategy
-package.name = nipstrategy
+title = Nip
+package.name = nip
 package.domain = org.chikuboya
 source.dir = .
 source.include_exts = py,png,jpg,kv,atlas,ttc
-source.include_patterns = font.ttc
 version = 0.1
-requirements = python3,kivy
 
-# アイコンは指定せずデフォルトを使用
-# icon.filename = %(source.dir)s/icon.png
+# ★ 依存関係を最小限かつ確実に
+requirements = python3,kivy==2.3.0,pillow
 
 orientation = portrait
 fullscreen = 1
-android.api = 31
+
+# ★ Android SDK/NDK のバージョンを安定版に固定
+android.api = 33
 android.minapi = 21
+android.ndk = 25b
+android.ndk_api = 21
 
-# ライセンス同意を有効化（これでエラーを回避します）
-android.accept_sdk_license = True
+# ★ ログを詳細に出す設定に変更
+log_level = 2
 
-# ビルドを軽くするために1つに指定
-android.archs = arm64-v8a
-android.debug_artifact = 0
+[buildozer]
+log_level = 2
+warn_on_root = 1
