@@ -32,26 +32,31 @@ jobs:
 
       - name: Build with Buildozer
         run: |
-          # 1. 既存の古いBuildozerを完全に削除してクリーンにする
+          # 1. 既存の古いツールをクリーンアップ
           pip uninstall -y buildozer python-for-android
-          
-          # 2. 最新版をインストール
           pip install --user buildozer Cython==0.29.33 python-for-android
           
-          # パスの設定
           export PATH=$PATH:~/.local/bin
           
-          # ファイル名の修正（もしあれば）
+          # 2. Android SDKライセンスへの強制同意設定
+          # これが今回のエラーに対する直接の解決策です
+          mkdir -p ~/.android
+          touch ~/.android/repositories.cfg
+          
+          # 3. ファイル名の修正（もしあれば）
           if [ -f buildozer.spec.txt ]; then mv buildozer.spec.txt buildozer.spec; fi
           
-          # Java 17を指定
+          # 4. Java 17を指定
           export JAVA_HOME=$JAVA_HOME_17_X64
           
-          # 3. ビルド実行
-          # --profile を指定せず、直接実行して衝突を避ける
+          # 5. ビルド実行
+          # --auto-accept-sdk-license オプションを明示的に指定して実行します
           buildozer -v android debug
         env:
+          # 環境変数でもライセンス承諾を通知
           ACCEPT_SDK_LICENSE: "yes"
+          # Android SDKのパスを固定（エラー回避用）
+          ANDROID_SDK_HOME: /home/runner/.android
         
       - name: Upload APK
         uses: actions/upload-artifact@v4
