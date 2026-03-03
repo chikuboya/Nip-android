@@ -36,4 +36,5 @@ fullscreen = 1
 
 # (int) Android APIレベル（通常はそのままでOK）
 android.api = 31
+
 android.minapi = 21
