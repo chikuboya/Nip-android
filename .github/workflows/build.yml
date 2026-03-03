@@ -17,16 +17,19 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y \
+          # エラーの原因である libunwind-dev を最初に追加し、
+          # かつ壊れた依存関係を強制的に修復する設定 (-f) を入れています
+          sudo apt-get install -f -y \
+            libunwind-dev \
             build-essential git python3-dev ffmpeg \
             libsdl2-dev libsdl2-image-dev libsdl2-mixer-dev libsdl2-ttf-dev \
             libportmidi-dev libswscale-dev libavformat-dev libavcodec-dev \
             zlib1g-dev libgstreamer1.0-dev autoconf automake libtool pkg-config
+          
           pip install --user --upgrade Cython==0.29.33 buildozer setuptools
 
       - name: Build with Buildozer
         run: |
-          # パスを通してから実行
           export PATH=$PATH:$HOME/.local/bin
           yes | buildozer android debug
         env:
