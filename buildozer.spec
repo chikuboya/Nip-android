@@ -27,7 +27,7 @@ requirements = python3,kivy
 
 # (str) アイコン画像の設定
 # ★コメントアウトを外し、icon.png を参照するようにしました
-icon.filename = %(source.dir)s/icon.png
+# icon.filename = %(source.dir)s/icon.png
 
 # (str) 画面の向き (縦固定)
 orientation = portrait
@@ -49,5 +49,6 @@ android.archs = arm64-v8a
 
 # (bool) 署名済みのAPK/AABを生成するかどうか (デバッグ時は0でOK)
 android.debug_artifact = 0
+
 
 
