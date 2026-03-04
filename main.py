@@ -36,9 +36,9 @@ class MenuScreen(Screen):
         super().__init__(**kwargs)
         layout = BoxLayout(orientation='vertical', padding=50, spacing=25)
         layout.add_widget(Label(size_hint_y=0.2)) 
-        layout.add_widget(Label(text="NIP 戦略モード", font_size='35sp', bold=True, size_hint_y=None, height=120))
+        layout.add_widget(Label(text="NIP ニップ", font_size='35sp', bold=True, size_hint_y=None, height=120))
         
-        pvp_btn = Button(text="人 対 人 (PvP)", size_hint=(0.8, None), height=100, pos_hint={'center_x': 0.5}, bold=True, font_size='22sp')
+        pvp_btn = Button(text="人 対 人 対局開始", size_hint=(0.8, None), height=100, pos_hint={'center_x': 0.5}, bold=True, font_size='22sp')
         pvp_btn.bind(on_release=lambda x: self.start_game("PvP"))
         layout.add_widget(pvp_btn)
         
@@ -60,7 +60,7 @@ class MenuScreen(Screen):
             lv_layout.add_widget(btn)
         layout.add_widget(lv_layout)
         
-        pve_btn = Button(text="対局開始", size_hint=(0.9, None), height=120, pos_hint={'center_x': 0.5}, background_color=(0.67, 0.84, 0.9, 1), bold=True, font_size='26sp')
+        pve_btn = Button(text="人 対 CPU 対局開始", size_hint=(0.9, None), height=120, pos_hint={'center_x': 0.5}, background_color=(0.67, 0.84, 0.9, 1), bold=True, font_size='26sp')
         pve_btn.bind(on_release=lambda x: self.start_game("PvE"))
         layout.add_widget(pve_btn)
         layout.add_widget(Label(size_hint_y=0.3)) 
@@ -403,3 +403,4 @@ class NipApp(App):
 
 if __name__ == '__main__':
     NipApp().run()
+
