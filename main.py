@@ -29,7 +29,7 @@ font_path = os.path.join(os.path.dirname(__file__), 'font.ttc')
 if os.path.exists(font_path):
     LabelBase.register(DEFAULT_FONT, font_path)
 
-# --- 盤面座標定義 ---
+# --- 盤面座標定義 (元のロジックを完全維持) ---
 VALID_COORDS = [
     (2,0), (3,0), (4,0), (5,0), (2,7), (3,7), (4,7), (5,7),
     (1,1), (2,1), (3,1), (4,1), (5,1), (6,1), (1,6), (2,6), (3,6), (4,6), (5,6), (6,6),
@@ -106,6 +106,11 @@ class GameScreen(Screen):
 
         self.status_label = Label(text="", pos_hint={'center_x': 0.5, 'top': 0.98}, size_hint=(1, 0.1), color=(0,0,0,1), font_size='22sp', bold=True)
         self.main_layout.add_widget(self.status_label)
+        
+        # 広告デバッグラベル（中央下部に配置）
+        self.ad_status_label = Label(text="Ads: Ready", pos_hint={'center_x': 0.5, 'y': 0.12}, size_hint=(1, 0.05), font_size='12sp', color=(1, 1, 1, 0.5))
+        self.main_layout.add_widget(self.ad_status_label)
+
         self.result_label = Label(text="", pos_hint={'center_x': 0.5, 'top': 0.91}, size_hint=(1, 0.1), font_size='45sp', bold=True, color=(1, 0, 0, 0))
         self.main_layout.add_widget(self.result_label)
 
@@ -123,6 +128,9 @@ class GameScreen(Screen):
         self.main_layout.add_widget(bottom_box)
         self.add_widget(self.main_layout)
         Window.bind(on_resize=self.on_window_resize)
+
+    def update_ad_status(self, text):
+        self.ad_status_label.text = f"Ads: {text}"
 
     def on_window_resize(self, *args):
         self.bg_rect.size = Window.size
@@ -179,6 +187,7 @@ class GameScreen(Screen):
                             Ellipse(pos=(x - cell_size*0.2, y - cell_size*0.2), size=(cell_size*0.4, cell_size*0.4))
         self.update_status()
 
+    # --- 判定ロジック ---
     def get_flipped(self, start, color, board_state):
         if board_state[start] is not None: return []
         opp = 'white' if color == 'black' else 'black'
@@ -208,6 +217,7 @@ class GameScreen(Screen):
                     else: break
         return list(set(normal_flipped + circle_flipped))
 
+    # --- CPU思考ロジック ---
     def evaluate_board(self, board, color):
         opp = 'white' if color == 'black' else 'black'
         score = 0
@@ -399,13 +409,14 @@ class GameScreen(Screen):
         self.result_label.text = winner_text
         self.result_label.color = (1, 0, 0, 1)
 
-        # 広告表示（終局時）
+        # 広告表示
         if KIVMOB_AVAILABLE and platform == 'android':
             app = App.get_running_app()
             if hasattr(app, 'ads') and app.ads:
                 try:
                     app.game_count += 1
                     if app.game_count % 3 == 0:
+                        self.update_ad_status("Loading Interstitial...")
                         if app.ads.is_interstitial_loaded():
                             app.ads.show_interstitial()
                         app.ads.request_interstitial()
@@ -413,35 +424,39 @@ class GameScreen(Screen):
 
 class NipApp(App):
     def build(self):
-        # 起動時に ads を None で初期化（AttributeError対策）
         self.ads = None
         self.game_count = 0
-
-        if KIVMOB_AVAILABLE and platform == 'android':
-            try:
-                # ★テスト用 AdMob ID
-                self.ads = KivMob("ca-app-pub-3940256099942544~3347511713")
-                self.ads.add_banner("ca-app-pub-3940256099942544/6300978111", True)
-                self.ads.add_interstitial("ca-app-pub-3940256099942544/1033173712", True)
-                
-                # ロード待ち時間を5秒に延長して確実に読み込ませる
-                Clock.schedule_once(self._load_initial_ads, 5)
-            except: pass
 
         self.sm = ScreenManager()
         self.game_screen = GameScreen(name='game')
         self.menu_screen = MenuScreen(name='menu')
         self.sm.add_widget(self.menu_screen)
         self.sm.add_widget(self.game_screen)
+
+        if KIVMOB_AVAILABLE and platform == 'android':
+            try:
+                # テストID
+                self.ads = KivMob("ca-app-pub-3940256099942544~3347511713")
+                self.ads.add_banner("ca-app-pub-3940256099942544/6300978111", True)
+                self.ads.add_interstitial("ca-app-pub-3940256099942544/1033173712", True)
+                
+                # 起動3秒後にロード開始
+                Clock.schedule_once(self._load_initial_ads, 3)
+            except Exception as e:
+                self.game_screen.update_ad_status(f"Init Error: {str(e)}")
+
         return self.sm
 
     def _load_initial_ads(self, dt):
         if self.ads:
             try:
+                self.game_screen.update_ad_status("Requesting Banner...")
                 self.ads.request_banner()
                 self.ads.show_banner()
                 self.ads.request_interstitial()
-            except: pass
+                self.game_screen.update_ad_status("Banner Requested")
+            except Exception as e:
+                self.game_screen.update_ad_status(f"Load Error: {str(e)}")
 
 if __name__ == '__main__':
     NipApp().run()
