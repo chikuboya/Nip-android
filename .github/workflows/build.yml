@@ -3,7 +3,6 @@ on: [push, pull_request]
 
 jobs:
   build:
-    # OSを実績のある22.04に変更（24.04でのマクロエラー回避）
     runs-on: ubuntu-22.04
     
     steps:
@@ -14,7 +13,6 @@ jobs:
         with:
           python-version: '3.11'
 
-      # Java 17をセットアップ
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
@@ -31,21 +29,16 @@ jobs:
             curl unzip \
             libffi-dev libssl-dev \
             ant autoconf automake libtool pkg-config
-          # Cythonのバージョンを安定版に固定
+          
+          # ★ ビルド環境に kivmob をインストール
+          pip install --user kivmob
           pip install --user --upgrade "Cython<3.0" buildozer
 
       - name: Build with Buildozer
         run: |
-          # フォルダ構成に合わせて cd する（もし直下なら削除してください）
-          # cd android_kivy 
-          
           if [ -f buildozer.spec.txt ]; then mv buildozer.spec.txt buildozer.spec; fi
-          
           export PATH=$PATH:~/.local/bin
-          # Java環境変数をBuildozerに適用
           export JAVA_HOME=$JAVA_HOME_17_X64
-          
-          # ログを詳細に出すために -v を使用
           yes | buildozer -v android debug
         env:
           ACCEPT_SDK_LICENSE: "yes"
