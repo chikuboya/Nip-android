@@ -1,5 +1,4 @@
 [app]
-# アプリの基本情報
 title = Nip
 package.name = nip
 package.domain = org.chikuboya
@@ -8,33 +7,25 @@ source.include_exts = py,png,jpg,kv,atlas,ttc
 version = 0.1
 icon.filename = %(source.dir)s/icon.png
 
-# 必須ライブラリ: kivmob本体と通信に必要なモジュール
 requirements = python3,kivy==2.3.0,pillow,android,pyjnius,kivmob
 
 orientation = portrait
 fullscreen = 1
 
-# 広告通信に必要な権限
 android.permissions = INTERNET, ACCESS_NETWORK_STATE
 
-# Android SDK/NDK 設定
 android.api = 33
 android.minapi = 21
 android.ndk = 25b
 android.ndk_api = 21
 
-# ★ AdMobアプリIDの設定
-android.meta_data = com.google.android.gms.ads.APPLICATION_ID=ca-app-pub-3649897440139100~8105670662
-
-# ★ 必須追加1: 広告を表示するためのAndroid側ライブラリの定義
-# PythonのコードからGoogleの広告システムを呼び出すために絶対に必要です
+# ★以下の2行がないと広告は絶対に出ません
 android.gradle_dependencies = 'com.google.android.gms:play-services-ads:22.6.0'
-
-# ★ 必須追加2: AndroidXの有効化
-# 現在のAdMobライブラリ（play-services-ads）を動かすための土台となる設定です
 android.enable_androidx = True
 
-# 実行ログの出力レベル
+# ★スペースがないか再確認
+android.meta_data = com.google.android.gms.ads.APPLICATION_ID=ca-app-pub-3649897440139100~8105670662
+
 log_level = 2
 
 [buildozer]
