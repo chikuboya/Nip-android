@@ -15,7 +15,7 @@ import math
 import random
 import time
 
-# --- 広告設定 (KivMob) の安全な読み込み ---
+# --- 広告設定 (KivMob) ---
 KIVMOB_AVAILABLE = False
 try:
     if platform == 'android':
@@ -29,7 +29,7 @@ font_path = os.path.join(os.path.dirname(__file__), 'font.ttc')
 if os.path.exists(font_path):
     LabelBase.register(DEFAULT_FONT, font_path)
 
-# --- 盤面定義 ---
+# --- 盤面座標定義 (元のロジックを完全維持) ---
 VALID_COORDS = [
     (2,0), (3,0), (4,0), (5,0), (2,7), (3,7), (4,7), (5,7),
     (1,1), (2,1), (3,1), (4,1), (5,1), (6,1), (1,6), (2,6), (3,6), (4,6), (5,6), (6,6),
@@ -45,7 +45,7 @@ class MenuScreen(Screen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         layout = BoxLayout(orientation='vertical', padding=50, spacing=25)
-        layout.add_widget(Label(size_hint_y=0.2)) 
+        layout.add_widget(Label(size_hint_y=0.2))
         layout.add_widget(Label(text="NIP ニップ", font_size='35sp', bold=True, size_hint_y=None, height=120))
         
         pvp_btn = Button(text="人 対 人 対局開始", size_hint=(0.8, None), height=100, pos_hint={'center_x': 0.5}, bold=True, font_size='22sp')
@@ -73,7 +73,7 @@ class MenuScreen(Screen):
         pve_btn = Button(text="人 対 CPU 対局開始", size_hint=(0.9, None), height=120, pos_hint={'center_x': 0.5}, background_color=(0.67, 0.84, 0.9, 1), bold=True, font_size='26sp')
         pve_btn.bind(on_release=lambda x: self.start_game("PvE"))
         layout.add_widget(pve_btn)
-        layout.add_widget(Label(size_hint_y=0.3)) 
+        layout.add_widget(Label(size_hint_y=0.3))
         self.add_widget(layout)
 
     def start_game(self, mode):
@@ -96,12 +96,12 @@ class GameScreen(Screen):
         self.board = {coord: None for coord in VALID_COORDS}
         self.history = []
         self.last_move = None
-        self.is_game_over = False 
-        self.pass_msg = "" 
+        self.is_game_over = False
+        self.pass_msg = ""
 
         self.main_layout = FloatLayout()
         with self.main_layout.canvas.before:
-            Color(143/255, 188/255, 143/255, 1) 
+            Color(143/255, 188/255, 143/255, 1)
             self.bg_rect = Rectangle(pos=(0, 0), size=Window.size)
 
         self.status_label = Label(text="", pos_hint={'center_x': 0.5, 'top': 0.98}, size_hint=(1, 0.1), color=(0,0,0,1), font_size='22sp', bold=True)
@@ -133,12 +133,12 @@ class GameScreen(Screen):
 
     def get_draw_params(self):
         w, h = Window.size
-        board_area_h = h * 0.68 
+        board_area_h = h * 0.68
         canvas_size = min(w, board_area_h)
         margin = canvas_size * 0.12
         cell_size = (canvas_size - margin * 2) / 7
         offset_x = (w - canvas_size) / 2
-        offset_y = (h - canvas_size) / 2 - 30 
+        offset_y = (h - canvas_size) / 2 - 30
         return offset_x, offset_y, canvas_size, margin, cell_size
 
     def draw_board(self, *args):
@@ -179,6 +179,7 @@ class GameScreen(Screen):
                             Ellipse(pos=(x - cell_size*0.2, y - cell_size*0.2), size=(cell_size*0.4, cell_size*0.4))
         self.update_status()
 
+    # --- 判定ロジック (完全版) ---
     def get_flipped(self, start, color, board_state):
         if board_state[start] is not None: return []
         opp = 'white' if color == 'black' else 'black'
@@ -208,6 +209,7 @@ class GameScreen(Screen):
                     else: break
         return list(set(normal_flipped + circle_flipped))
 
+    # --- CPU思考ロジック (完全版) ---
     def evaluate_board(self, board, color):
         opp = 'white' if color == 'black' else 'black'
         score = 0
@@ -316,7 +318,7 @@ class GameScreen(Screen):
 
     def on_touch_down(self, touch):
         if touch.y < Window.height * 0.15: return super().on_touch_down(touch)
-        if self.is_game_over: return 
+        if self.is_game_over: return
         if self.mode == "PvE" and self.turn == self.cpu_color: return
         off_x, off_y, c_size, margin, cell_size = self.get_draw_params()
         best, min_dist = None, cell_size * 0.5
@@ -331,7 +333,7 @@ class GameScreen(Screen):
     def make_move(self, coord):
         to_flip = self.get_flipped(coord, self.turn, self.board)
         if to_flip:
-            self.pass_msg = "" 
+            self.pass_msg = ""
             self.history.append({'board': self.board.copy(), 'turn': self.turn, 'last_move': self.last_move})
             self.board[coord] = self.turn
             self.last_move = coord
@@ -399,7 +401,7 @@ class GameScreen(Screen):
         self.result_label.text = winner_text
         self.result_label.color = (1, 0, 0, 1)
 
-        # 広告表示の安全な呼び出し
+        # 広告表示
         if KIVMOB_AVAILABLE and platform == 'android':
             app = App.get_running_app()
             if hasattr(app, 'ads') and app.ads:
@@ -409,23 +411,21 @@ class GameScreen(Screen):
                         if app.ads.is_interstitial_loaded():
                             app.ads.show_interstitial()
                         app.ads.request_interstitial()
-                except Exception as e:
-                    print(f"DEBUG: Ad error: {e}")
+                except: pass
 
 class NipApp(App):
     def build(self):
-        # 起動時に ads を None で初期化 (AttributeError対策)
         self.ads = None
         self.game_count = 0
 
         if KIVMOB_AVAILABLE and platform == 'android':
             try:
-                self.ads = KivMob("ca-app-pub-3649897440139100~8105670662")
-                self.ads.add_banner("ca-app-pub-3649897440139100/2778302303", True)
-                self.ads.add_interstitial("ca-app-pub-3649897440139100/8253990263", True)
+                # テストID
+                self.ads = KivMob("ca-app-pub-3940256099942544~3347511713")
+                self.ads.add_banner("ca-app-pub-3940256099942544/6300978111", True)
+                self.ads.add_interstitial("ca-app-pub-3940256099942544/1033173712", True)
                 Clock.schedule_once(self._load_initial_ads, 1)
-            except Exception as e:
-                print(f"DEBUG: AdMob failed: {e}")
+            except: pass
 
         self.sm = ScreenManager()
         self.game_screen = GameScreen(name='game')
@@ -440,8 +440,7 @@ class NipApp(App):
                 self.ads.request_banner()
                 self.ads.show_banner()
                 self.ads.request_interstitial()
-            except Exception as e:
-                print(f"DEBUG: Initial ad load failed: {e}")
+            except: pass
 
 if __name__ == '__main__':
     NipApp().run()
