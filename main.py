@@ -24,7 +24,7 @@ try:
 except Exception as e:
     print(f"DEBUG: KivMob import failed: {e}")
 
-# 日本語フォント登録
+# 日本語フォント登録 (font.ttcがプロジェクト内にある前提)
 font_path = os.path.join(os.path.dirname(__file__), 'font.ttc')
 if os.path.exists(font_path):
     LabelBase.register(DEFAULT_FONT, font_path)
@@ -399,38 +399,34 @@ class GameScreen(Screen):
         self.result_label.text = winner_text
         self.result_label.color = (1, 0, 0, 1)
 
-        # --- 全画面広告の表示制御 (3回に1回) ---
+        # --- 全画面広告の表示制御 ---
         if KIVMOB_AVAILABLE and platform == 'android':
-            try:
-                app = App.get_running_app()
-                app.game_count += 1
-                if app.game_count % 3 == 0:
-                    # 前もってロードされているはずだが、念のためリクエストして表示
-                    app.ads.request_interstitial()
-                    # ロード待ちを考慮してわずかに遅延させて表示
-                    Clock.schedule_once(lambda dt: app.ads.show_interstitial(), 0.5)
-            except Exception as e:
-                print(f"DEBUG: Failed to show interstitial: {e}")
+            app = App.get_running_app()
+            # 修正：app.adsが初期化されているかチェック
+            if app.ads:
+                try:
+                    app.game_count += 1
+                    if app.game_count % 3 == 0:
+                        if app.ads.is_interstitial_loaded():
+                            app.ads.show_interstitial()
+                        app.ads.request_interstitial()
+                except Exception as e:
+                    print(f"DEBUG: Ad error: {e}")
 
 class NipApp(App):
     def build(self):
-        # 対局カウンターの初期化
+        # 修正：初期化を明示的に行い、AttributeErrorを防ぐ
+        self.ads = None
         self.game_count = 0
 
-        # 広告の初期化
         if KIVMOB_AVAILABLE and platform == 'android':
             try:
-                # アプリIDの設定
                 self.ads = KivMob("ca-app-pub-3649897440139100~8105670662")
-                
-                # 第2引数を True にしてテストモードを有効化
                 self.ads.add_banner("ca-app-pub-3649897440139100/2778302303", True)
                 self.ads.add_interstitial("ca-app-pub-3649897440139100/8253990263", True)
-                
-                # 起動直後のメインスレッド負荷を下げるため1秒後に読み込み開始
                 Clock.schedule_once(self._load_initial_ads, 1)
             except Exception as e:
-                print(f"DEBUG: AdMob initialization failed: {e}")
+                print(f"DEBUG: AdMob failed: {e}")
 
         self.sm = ScreenManager()
         self.menu_screen = MenuScreen(name='menu')
@@ -440,17 +436,13 @@ class NipApp(App):
         return self.sm
 
     def _load_initial_ads(self, dt):
-        """起動時にバナーを表示し、全画面広告を予備ロードしておく"""
-        if not (KIVMOB_AVAILABLE and platform == 'android'):
-            return
-        try:
-            self.ads.request_banner()
-            self.ads.show_banner()
-            # 最初の対局が終わる前に裏で準備（ロード）しておく
-            self.ads.request_interstitial() 
-            print("DEBUG: Ads requested via schedule_once")
-        except Exception as e:
-            print(f"DEBUG: Ad request failed: {e}")
+        if self.ads:
+            try:
+                self.ads.request_banner()
+                self.ads.show_banner()
+                self.ads.request_interstitial()
+            except Exception as e:
+                print(f"DEBUG: Load error: {e}")
 
 if __name__ == '__main__':
     NipApp().run()
