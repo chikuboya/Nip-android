@@ -29,7 +29,7 @@ font_path = os.path.join(os.path.dirname(__file__), 'font.ttc')
 if os.path.exists(font_path):
     LabelBase.register(DEFAULT_FONT, font_path)
 
-# --- 盤面座標定義 (元のロジックを完全維持) ---
+# --- 盤面座標定義 ---
 VALID_COORDS = [
     (2,0), (3,0), (4,0), (5,0), (2,7), (3,7), (4,7), (5,7),
     (1,1), (2,1), (3,1), (4,1), (5,1), (6,1), (1,6), (2,6), (3,6), (4,6), (5,6), (6,6),
@@ -179,7 +179,6 @@ class GameScreen(Screen):
                             Ellipse(pos=(x - cell_size*0.2, y - cell_size*0.2), size=(cell_size*0.4, cell_size*0.4))
         self.update_status()
 
-    # --- 判定ロジック (完全版) ---
     def get_flipped(self, start, color, board_state):
         if board_state[start] is not None: return []
         opp = 'white' if color == 'black' else 'black'
@@ -209,7 +208,6 @@ class GameScreen(Screen):
                     else: break
         return list(set(normal_flipped + circle_flipped))
 
-    # --- CPU思考ロジック (完全版) ---
     def evaluate_board(self, board, color):
         opp = 'white' if color == 'black' else 'black'
         score = 0
@@ -401,7 +399,7 @@ class GameScreen(Screen):
         self.result_label.text = winner_text
         self.result_label.color = (1, 0, 0, 1)
 
-        # 広告表示
+        # 広告表示（終局時）
         if KIVMOB_AVAILABLE and platform == 'android':
             app = App.get_running_app()
             if hasattr(app, 'ads') and app.ads:
@@ -415,16 +413,19 @@ class GameScreen(Screen):
 
 class NipApp(App):
     def build(self):
+        # 起動時に ads を None で初期化（AttributeError対策）
         self.ads = None
         self.game_count = 0
 
         if KIVMOB_AVAILABLE and platform == 'android':
             try:
-                # テストID
+                # ★テスト用 AdMob ID
                 self.ads = KivMob("ca-app-pub-3940256099942544~3347511713")
                 self.ads.add_banner("ca-app-pub-3940256099942544/6300978111", True)
                 self.ads.add_interstitial("ca-app-pub-3940256099942544/1033173712", True)
-                Clock.schedule_once(self._load_initial_ads, 1)
+                
+                # ロード待ち時間を5秒に延長して確実に読み込ませる
+                Clock.schedule_once(self._load_initial_ads, 5)
             except: pass
 
         self.sm = ScreenManager()
