@@ -28,8 +28,8 @@ android.gradle_dependencies = com.google.android.gms:play-services-ads:22.6.0
 # AndroidX 有効化
 android.enable_androidx = True
 
-# ★テスト用 AdMob アプリID
-android.meta_data = com.google.android.gms.ads.APPLICATION_ID=ca-app-pub-3940256099942544~3347511713
+# ★広告エンジンを強制有効化するフラグ（重要）
+android.meta_data = com.google.android.gms.ads.APPLICATION_ID=ca-app-pub-3940256099942544~3347511713, com.google.android.gms.ads.AD_MANAGER_APP=true
 
 log_level = 2
 
