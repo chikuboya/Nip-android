@@ -8,7 +8,7 @@ source.include_exts = py,png,jpg,kv,atlas,ttc
 version = 0.1
 icon.filename = %(source.dir)s/icon.png
 
-# 必須ライブラリ: kivmob とその依存関係を追加
+# 必須ライブラリ: 広告用の android と kivmob を確実に含める
 requirements = python3,kivy==2.3.0,pillow,android,pyjnius,kivmob
 
 orientation = portrait
@@ -23,8 +23,14 @@ android.minapi = 21
 android.ndk = 25b
 android.ndk_api = 21
 
-# ★ AdMobアプリIDの設定 (スペースを入れないよう注意)
+# ★ AdMobアプリIDの設定
 android.meta_data = com.google.android.gms.ads.APPLICATION_ID=ca-app-pub-3649897440139100~8105670662
+
+# ★ 重要：Google Play Services 広告ライブラリの追加
+android.gradle_dependencies = 'com.google.android.gms:play-services-ads:22.6.0'
+
+# ★ 重要：AndroidX の有効化 (最新の広告ライブラリに必須)
+android.enable_androidx = True
 
 # 実行ログの出力レベル (デバッグ用)
 log_level = 2
