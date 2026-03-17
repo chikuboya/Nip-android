@@ -1,4 +1,3 @@
-from kivmob import KivMob, TestIds
 from kivy.app import App
 from kivy.uix.floatlayout import FloatLayout
 from kivy.uix.boxlayout import BoxLayout
@@ -10,6 +9,7 @@ from kivy.core.window import Window
 from kivy.clock import Clock
 from kivy.core.text import LabelBase, DEFAULT_FONT
 from kivy.uix.screenmanager import ScreenManager, Screen
+from jnius import autoclass
 import os
 import math
 import random
@@ -413,17 +413,48 @@ class NipApp(App):
         return self.sm
 
     def on_start(self):
+        # すぐ広告出すと落ちるので遅延させる
+        Clock.schedule_once(self.init_ads, 1)
+
+    def init_ads(self, dt):
         try:
-            # テスト用のIDで初期化
-            self.ads = KivMob(TestIds.APP)
-            # バナー広告を準備（画面下部に設定）
-            self.ads.new_banner(TestIds.BANNER, top_pos=False)
-            # 広告をリクエスト
-            self.ads.request_banner()
-            # 広告を表示
-            self.ads.show_banner()
+            PythonActivity = autoclass('org.kivy.android.PythonActivity')
+            AdView = autoclass('com.google.android.gms.ads.AdView')
+            AdRequestBuilder = autoclass('com.google.android.gms.ads.AdRequest$Builder')
+            AdSize = autoclass('com.google.android.gms.ads.AdSize')
+            LinearLayout = autoclass('android.widget.LinearLayout')
+            ViewGroupLayoutParams = autoclass('android.view.ViewGroup$LayoutParams')
+
+            activity = PythonActivity.mActivity
+
+            # バナー作成
+            adview = AdView(activity)
+            adview.setAdSize(AdSize.BANNER)
+
+            # ★テスト広告（安全）
+            adview.setAdUnitId("ca-app-pub-3940256099942544/6300978111")
+
+            # リクエスト
+            ad_request = AdRequestBuilder().build()
+            adview.loadAd(ad_request)
+
+            # レイアウト
+            layout = LinearLayout(activity)
+            layout.setOrientation(LinearLayout.VERTICAL)
+            layout.addView(adview)
+
+            activity.addContentView(
+                layout,
+                ViewGroupLayoutParams(
+                    ViewGroupLayoutParams.MATCH_PARENT,
+                    ViewGroupLayoutParams.WRAP_CONTENT
+                )
+            )
+
+            print("AdMob OK")
+
         except Exception as e:
-            print(f"AdMob初期化エラー: {e}")
+            print("AdMob エラー:", e)
 
 if __name__ == '__main__':
     NipApp().run()
