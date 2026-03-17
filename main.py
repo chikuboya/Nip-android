@@ -413,44 +413,7 @@ class NipApp(App):
         return self.sm
 
     def on_start(self):
-        # すぐ広告出すと落ちるので遅延させる
-        Clock.schedule_once(self.init_ads, 3)
-
-    def init_ads(self, dt):
-        try:
-            PythonActivity = autoclass('org.kivy.android.PythonActivity')
-            AdView = autoclass('com.google.android.gms.ads.AdView')
-            AdRequestBuilder = autoclass('com.google.android.gms.ads.AdRequest$Builder')
-            AdSize = autoclass('com.google.android.gms.ads.AdSize')
-            LinearLayout = autoclass('android.widget.LinearLayout')
-            ViewGroupLayoutParams = autoclass('android.view.ViewGroup$LayoutParams')
-
-            activity = PythonActivity.mActivity
-
-            def add_ads():
-                adview = AdView(activity)
-                adview.setAdSize(AdSize.BANNER)
-                adview.setAdUnitId("ca-app-pub-3940256099942544/6300978111")
-
-                ad_request = AdRequestBuilder().build()
-                adview.loadAd(ad_request)
-
-                layout = LinearLayout(activity)
-                layout.setOrientation(LinearLayout.VERTICAL)
-                layout.addView(adview)
-
-                activity.addContentView(
-                    layout,
-                    ViewGroupLayoutParams(
-                        ViewGroupLayoutParams.MATCH_PARENT,
-                        ViewGroupLayoutParams.WRAP_CONTENT
-                    )
-                )
-
-            activity.runOnUiThread(add_ads)
-
-        except Exception as e:
-            print("AdMob エラー:", e)
+        pass
 
 if __name__ == '__main__':
     NipApp().run()
