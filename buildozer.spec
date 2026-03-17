@@ -9,6 +9,8 @@ source.include_exts = py,png,jpg,kv,ttc
 
 version = 1.0
 
+icon.filename = icon.png
+
 requirements = python3,kivy,pyjnius
 
 orientation = portrait
