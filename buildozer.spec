@@ -1,57 +1,48 @@
 [app]
 
-# アプリ基本情報
 title = Nip
 package.name = nip
-package.domain = org.chikuboya
+package.domain = org.test
 
-# ソース
 source.dir = .
-source.include_exts = py,png,jpg,ttc
+source.include_exts = py,png,jpg,kv,ttc
 
-# バージョン
-version = 0.1
+version = 1.0
 
-# アイコン
-icon.filename = %(source.dir)s/icon.png
+requirements = python3,kivy,pyjnius
 
-# 必須ライブラリ
-requirements = python3,kivy==2.3.0,pillow,kivmob
-
-# 画面設定
 orientation = portrait
-fullscreen = 1
 
-# 権限（AdMob用）
+fullscreen = 0
+
+# 権限
 android.permissions = INTERNET,ACCESS_NETWORK_STATE
 
-# API設定（重要）
-android.api = 33
-android.minapi = 21
-
-# AdMob用設定（kivmob必須）
+# AdMob（超重要）
 android.gradle_dependencies = com.google.android.gms:play-services-ads:22.6.0
 
-# ビルド高速化
-android.accept_sdk_license = True
+# Android設定
+android.api = 33
+android.minapi = 21
+android.ndk = 25b
 
-# ログレベル
-log_level = 2
-
-# 起動ファイル
+# 起動
 entrypoint = main.py
 
-# パッケージに含めるファイル
-source.include_patterns = assets/*,images/*,*.ttc
+# ログ
+log_level = 2
 
-# 日本語フォント対応（今回重要）
-android.add_assets = font.ttc
+# ビルド高速化（おすすめ）
+p4a.branch = master
 
-# デバッグ時ログ
+# 画面回転防止
+android.orientation = portrait
+
+# デバッグ時便利
 android.logcat_filters = *:S python:D
 
-# フルスクリーン安定化
-android.presplash_color = #FFFFFF
+# --- 以下はデフォルト ---
+[buildozer]
 
-# 64bit対応
-android.archs = arm64-v8a, armeabi-v7a
+log_level = 2
+warn_on_root = 1
